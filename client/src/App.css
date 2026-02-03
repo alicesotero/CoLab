@@ -1,273 +1,389 @@
+/* --- VARIÁVEIS GLOBAIS (CORES) --- */
 :root {
-  /* Paleta de Cores CoLab (Azul e Branco) */
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F3F4F6;   /* Cinza muito claro para a sidebar */
-  --colab-blue: #2563EB;     /* Azul vibrante principal */
+  --colab-blue: #2563EB;
   --colab-blue-dark: #1D4ED8;
-  --text-primary: #1F2937;   /* Cinza escuro (quase preto) para leitura fácil */
+  --bg-color: #F3F4F6;
+  --chat-bg: #FFFFFF;
+  --sidebar-bg: #F9FAFB;
+  --text-primary: #111827;
   --text-secondary: #6B7280;
-  --border-color: #E5E7EB;
-  
-  /* Cores das Mensagens */
-  --msg-me-bg: #2563EB;      /* Azul pedido */
-  --msg-me-text: #FFFFFF;
-  --msg-other-bg: #E5E7EB;
-  --msg-other-text: #1F2937;
+  --message-user: #2563EB;
+  --message-other: #E5E7EB;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* --- RESET BÁSICO --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 
-body { 
-  font-family: 'Inter', 'Segoe UI', sans-serif; 
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+body {
+  background-color: var(--bg-color);
+  height: 100vh;
   overflow: hidden;
 }
 
+/* --- LAYOUT PRINCIPAL --- */
 .app-container {
   display: flex;
   height: 100vh;
   width: 100vw;
+  background-color: white;
 }
 
-/* --- BARRA LATERAL (SIDEBAR) --- */
+/* --- SIDEBAR (BARRA LATERAL) --- */
 .sidebar {
   width: 260px;
-  background-color: var(--bg-secondary);
-  border-right: 1px solid var(--border-color);
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid #E5E7EB;
   display: flex;
   flex-direction: column;
-  padding: 20px 10px;
+  padding: 20px;
+  transition: all 0.3s ease;
 }
 
 .sidebar h2 {
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
   margin-bottom: 30px;
-  padding-left: 10px;
-  color: var(--colab-blue);
-  font-weight: 800;
-  letter-spacing: -0.5px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .channel {
-  padding: 12px 15px;
-  margin-bottom: 4px;
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--text-secondary);
-  font-weight: 500;
-  transition: all 0.2s;
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 5px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 
-.channel:hover { background-color: #E0E7FF; color: var(--colab-blue); }
-
-.channel.active { 
-  background-color: #DBEAFE; /* Azul muito clarinho */
-  color: var(--colab-blue); 
-  font-weight: 700;
+.channel:hover {
+  background-color: #E5E7EB;
+  color: var(--text-primary);
 }
 
-/* --- JANELA PRINCIPAL --- */
+.channel.active {
+  background-color: #EFF6FF;
+  color: var(--colab-blue);
+  font-weight: 600;
+}
+
+/* --- JANELA DE CHAT --- */
 .chat-window {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-primary);
+  background-color: var(--chat-bg);
+  position: relative;
 }
 
 .chat-header {
   height: 70px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid #E5E7EB;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 30px;
-  background-color: rgba(255,255,255,0.9);
-  backdrop-filter: blur(5px);
+  padding: 0 25px;
 }
 
 .header-title {
   font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 10px;
+  color: var(--text-primary);
 }
 
-/* Botões Modernos */
-.btn-primary {
-  background-color: var(--colab-blue);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-  transition: background 0.2s, transform 0.1s;
-}
-.btn-primary:hover { background-color: var(--colab-blue-dark); transform: translateY(-1px); }
-
-.btn-success {
-  background-color: #10B981; /* Verde bonito */
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
-}
-
-/* --- VÍDEO (GRID) --- */
-.video-grid {
-  background-color: #111827; /* O fundo do vídeo mantém-se escuro para contraste */
-  padding: 20px;
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  align-items: center;
-  min-height: 280px;
-}
-
-.video-card {
-  position: relative;
-  background: #000;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-  border: 2px solid transparent;
-}
-
-.video-card video {
-  display: block;
-  width: 340px;
-  height: 255px;
-  object-fit: cover;
-  transform: scaleX(-1);
-}
-
-.user-label {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  background-color: rgba(0,0,0,0.6);
-  color: white;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  backdrop-filter: blur(2px);
-}
-
-/* --- CHAT BODY --- */
+/* --- CORPO DO CHAT (MENSAGENS) --- */
 .chat-body {
   flex: 1;
-  padding: 30px;
+  padding: 25px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 15px;
+  background-image: radial-gradient(#E5E7EB 1px, transparent 1px);
+  background-size: 20px 20px; /* Padrão de pontinhos subtil */
+}
+
+/* Scrollbar bonita */
+.chat-body::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-body::-webkit-scrollbar-thumb {
+  background-color: #D1D5DB;
+  border-radius: 10px;
 }
 
 .message-container {
   display: flex;
   flex-direction: column;
-  max-width: 65%;
-  animation: fadeIn 0.3s ease;
+  max-width: 60%;
 }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+#you {
+  align-self: flex-end;
+  align-items: flex-end;
+}
 
-#you { align-self: flex-end; align-items: flex-end; }
-#other { align-self: flex-start; }
+#other {
+  align-self: flex-start;
+  align-items: flex-start;
+}
 
 .message-content {
   padding: 12px 18px;
-  border-radius: 18px;
+  border-radius: 12px;
   font-size: 15px;
   line-height: 1.5;
+  position: relative;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* O Teu Balão Azul */
 #you .message-content {
-  background-color: var(--msg-me-bg);
-  color: var(--msg-me-text);
-  border-bottom-right-radius: 4px; /* Estilo "Gota" */
+  background-color: var(--message-user);
+  color: white;
+  border-bottom-right-radius: 2px;
 }
 
-/* O Balão dos Outros */
 #other .message-content {
-  background-color: var(--msg-other-bg);
-  color: var(--msg-other-text);
-  border-bottom-left-radius: 4px;
+  background-color: var(--message-other);
+  color: var(--text-primary);
+  border-bottom-left-radius: 2px;
 }
 
 .message-meta {
   font-size: 11px;
-  color: var(--text-secondary);
-  margin-top: 5px;
-  margin-left: 5px;
+  color: #9CA3AF;
+  margin-top: 4px;
+  display: flex;
+  gap: 5px;
 }
 
-/* --- INPUT --- */
+/* --- RODAPÉ (INPUT) --- */
 .chat-footer {
-  padding: 20px 30px;
-  background-color: var(--bg-primary);
-  border-top: 1px solid var(--border-color);
+  height: 80px;
+  border-top: 1px solid #E5E7EB;
   display: flex;
   align-items: center;
+  padding: 0 25px;
   gap: 15px;
+  background-color: white;
 }
 
 .input-wrapper {
   flex: 1;
   position: relative;
-  display: flex;
-  align-items: center;
 }
 
 .chat-footer input {
   width: 100%;
-  background-color: var(--bg-secondary);
-  border: 1px solid transparent;
-  color: var(--text-primary);
-  padding: 12px 20px;
-  border-radius: 25px; /* Arredondado moderno */
-  outline: none;
+  padding: 14px 20px;
+  border-radius: 25px;
+  border: 1px solid #E5E7EB;
+  background-color: #F9FAFB;
   font-size: 15px;
+  outline: none;
   transition: all 0.2s;
 }
 
 .chat-footer input:focus {
-  background-color: white;
   border-color: var(--colab-blue);
+  background-color: white;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+/* --- BOTÕES --- */
 .btn-icon {
-  background: var(--colab-blue);
-  border: none;
+  background-color: var(--colab-blue);
   color: white;
-  border-radius: 50%;
+  border: none;
   width: 45px;
   height: 45px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: transform 0.2s;
 }
-.btn-icon:hover { transform: scale(1.1); }
+
+.btn-icon:hover {
+  transform: scale(1.05);
+  background-color: var(--colab-blue-dark);
+}
+
+.btn-primary {
+  background-color: var(--colab-blue);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover { background-color: var(--colab-blue-dark); }
+
+.btn-success {
+  background-color: #10B981;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- VÍDEO --- */
+.video-grid {
+  height: 250px;
+  background-color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+  border-bottom: 1px solid #374151;
+}
+
+.video-card {
+  width: 300px;
+  height: 200px;
+  background-color: black;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* Efeito espelho */
+}
+
+.user-label {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background-color: rgba(0,0,0,0.6);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* --- LOGIN / REGISTO (ATUALIZADO & COMPACTO) --- */
+.login-container {
+  height: 100vh;
+  width: 100vw;
+  background-color: #F3F4F6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: white;
+  padding: 30px; /* Mais compacto */
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+  animation: fadeIn 0.5s ease;
+  
+  /* ESTA É A PARTE MÁGICA PARA ECRÃS PEQUENOS */
+  max-height: 90vh; 
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Barra de scroll subtil no card de login */
+.login-card::-webkit-scrollbar {
+  width: 4px;
+}
+.login-card::-webkit-scrollbar-thumb {
+  background-color: #E2E8F0;
+  border-radius: 10px;
+}
+
+.login-card h2 {
+  color: var(--colab-blue);
+  margin-bottom: 5px;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.login-card h3 {
+  margin-bottom: 20px;
+  font-size: 15px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.login-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.login-input:focus {
+  border-color: var(--colab-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.btn-login {
+  width: 100%;
+  background-color: var(--colab-blue);
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 10px;
+}
+
+.btn-login:hover { background-color: var(--colab-blue-dark); }
+
+/* Animação suave */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

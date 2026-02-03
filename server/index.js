@@ -7,72 +7,156 @@ const mongoose = require('mongoose');
 const app = express();
 app.use(cors());
 
-// --- MUDANÇA IMPORTANTE: Adicionei o nome da base de dados no link (test) ---
-// Substitui a SENHA abaixo
-const MONGO_URL = "mongodb+srv://CoLabAdmin:Z820v6ezLrGAmcoP@colabadmin.qwlqrwq.mongodb.net/?appName=CoLabAdmin";
-
-console.log("⏳ A tentar conectar ao MongoDB...");
+const MONGO_URL = "mongodb+srv://CoLabAdmin:Z820v6ezLrGAmcoP@colabadmin.qwlqrwq.mongodb.net/test?retryWrites=true&w=majority&appName=CoLabAdmin";
 
 mongoose.connect(MONGO_URL)
-  .then(() => console.log('✅✅✅ CONEXÃO MONGODB BEM SUCEDIDA! ✅✅✅'))
-  .catch((err) => {
-    console.error('❌❌❌ ERRO CRÍTICO NO MONGODB ❌❌❌');
-    console.error(err);
-  });
+  .then(() => console.log('✅ MONGODB CONECTADO'))
+  .catch((err) => console.error('❌ ERRO MONGODB:', err));
 
+// --- MODELOS ---
 const messageSchema = new mongoose.Schema({
-  room: String,
-  author: String,
-  message: String,
-  time: String,
-  createdAt: { type: Date, default: Date.now }
+  room: String, author: String, message: String, time: String, createdAt: { type: Date, default: Date.now }
 });
-
 const Message = mongoose.model('Message', messageSchema);
 
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST"] }
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  password: { type: String, required: true },
+  phoneNumber: { type: String },
+  isAdmin: { type: Boolean, default: false },
+  allowedRooms: { type: [String], default: ['Geral'] }, 
+  pendingRequests: { type: [String], default: [] }      
 });
+const User = mongoose.model('User', userSchema);
+
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
 
 io.on('connection', (socket) => {
-  console.log(`🔌 Novo Cliente Conectado: ${socket.id}`);
+  // --- AUTENTICAÇÃO ---
+  socket.on('register_user', async (data) => {
+    try {
+      const { username, password, firstName, lastName, phoneNumber } = data;
+      const existingUser = await User.findOne({ username });
+      if (existingUser) { socket.emit('auth_error', 'Utilizador já existe!'); return; }
+
+      const isAdmin = username.toLowerCase() === 'admin';
+      const allowedRooms = isAdmin ? ['Geral', 'Dúvidas', 'Projetos'] : ['Geral'];
+
+      const newUser = new User({ username, password, firstName, lastName, phoneNumber, isAdmin, allowedRooms });
+      await newUser.save();
+      
+      socket.emit('auth_success', { 
+        username, firstName, lastName, phoneNumber, isAdmin, allowedRooms, pendingRequests: [],
+        message: 'Conta criada!' 
+      });
+    } catch (err) { socket.emit('auth_error', 'Erro ao criar conta.'); }
+  });
+
+  socket.on('login_user', async (data) => {
+    try {
+      const { username, password } = data;
+      const user = await User.findOne({ username });
+      if (!user || user.password !== password) { socket.emit('auth_error', 'Dados incorretos.'); return; }
+
+      socket.emit('auth_success', { 
+        username, firstName: user.firstName, lastName: user.lastName, 
+        phoneNumber: user.phoneNumber || "", 
+        isAdmin: user.isAdmin,
+        allowedRooms: user.allowedRooms,
+        pendingRequests: user.pendingRequests,
+        message: 'Bem-vindo!' 
+      });
+    } catch (err) { socket.emit('auth_error', 'Erro no servidor.'); }
+  });
+
+  // --- 🔥 ADMINISTRAÇÃO 🔥 ---
+  
+  socket.on('get_all_users', async () => {
+    const users = await User.find({}, 'username firstName lastName allowedRooms pendingRequests');
+    socket.emit('all_users_data', users);
+  });
+
+  socket.on('toggle_permission', async (data) => {
+    const { targetUsername, room, action } = data; 
+    try {
+      const user = await User.findOne({ username: targetUsername });
+      if (user) {
+        if (action === 'grant') {
+           if (!user.allowedRooms.includes(room)) user.allowedRooms.push(room);
+           user.pendingRequests = user.pendingRequests.filter(r => r !== room);
+        } else {
+           user.allowedRooms = user.allowedRooms.filter(r => r !== room);
+        }
+        await user.save();
+        const users = await User.find({}, 'username firstName lastName allowedRooms pendingRequests');
+        socket.emit('all_users_data', users);
+        io.emit('permissions_updated', { username: targetUsername, allowedRooms: user.allowedRooms });
+      }
+    } catch (err) { console.error(err); }
+  });
+
+  socket.on('request_access', async (data) => {
+    const { username, room } = data;
+    try {
+      const user = await User.findOne({ username });
+      if (user && !user.pendingRequests.includes(room)) {
+        user.pendingRequests.push(room);
+        await user.save();
+      }
+    } catch(err) { console.error(err); }
+  });
+
+  // 🔥 NOVO: ADMIN ELIMINA UTILIZADOR 🔥
+  socket.on('admin_delete_user', async (targetUsername) => {
+    try {
+      // 1. Apaga da Base de Dados
+      await User.findOneAndDelete({ username: targetUsername });
+      
+      // 2. Envia lista atualizada para o Admin
+      const users = await User.find({}, 'username firstName lastName allowedRooms pendingRequests');
+      socket.emit('all_users_data', users);
+
+      // 3. Avisa o Admin que correu bem
+      socket.emit('admin_action_success', `O utilizador ${targetUsername} foi eliminado.`);
+
+      // (Opcional) Forçar logout desse user se estiver online
+      io.emit('force_logout_user', targetUsername);
+
+    } catch (err) { console.error(err); }
+  });
+
+  // --- RESTO (IGUAL) ---
+  socket.on('update_phone', async (data) => {
+      const { username, phoneNumber } = data;
+      await User.findOneAndUpdate({ username }, { phoneNumber });
+      socket.emit('phone_updated_success', 'Telemóvel atualizado!');
+  });
+  
+  socket.on('delete_account', async (username) => {
+      await User.findOneAndDelete({ username });
+      socket.emit('account_deleted_success');
+  });
 
   socket.on('join_room', async (room) => {
-    console.log(`👉 O user ${socket.id} pediu para entrar na sala: ${room}`);
     socket.join(room);
-    
     try {
-      console.log(`🔍 A procurar mensagens na BD para a sala: ${room}...`);
       const history = await Message.find({ room: room }).sort({ createdAt: 1 }).limit(50);
-      console.log(`📦 Encontrei ${history.length} mensagens antigas. A enviar para o cliente...`);
       socket.emit('load_history', history);
-    } catch (err) {
-      console.error("❌ Erro ao buscar mensagens:", err);
-    }
+    } catch (err) { console.error(err); }
   });
 
   socket.on('send_message', async (data) => {
-    console.log(`📝 Nova mensagem recebida de ${data.author}: ${data.message}`);
-    
-    try {
-      const newMessage = new Message(data);
-      await newMessage.save();
-      console.log("💾 Mensagem guardada na BD com sucesso!");
-    } catch (error) {
-       console.error("❌ Erro ao guardar mensagem na BD:", error);
-    }
-
-    socket.to(data.room).emit('receive_message', data);
+    const newMessage = new Message(data); await newMessage.save(); socket.to(data.room).emit('receive_message', data);
   });
 
-  // WebRTC e outros eventos
+  // WebRTC
   socket.on('offer', (p) => socket.to(p.room).emit('offer', p));
   socket.on('answer', (p) => socket.to(p.room).emit('answer', p));
   socket.on('ice-candidate', (p) => socket.to(p.room).emit('ice-candidate', p));
   socket.on('end_call', (r) => socket.to(r).emit('call_ended'));
 });
 
-server.listen(3001, () => {
-  console.log('🚀 SERVIDOR A CORRER NA PORTA 3001');
-});
+server.listen(3001, () => console.log('🚀 SERVIDOR ADMIN PRONTO'));
