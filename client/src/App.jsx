@@ -29,6 +29,7 @@ function App() {
   }, [remoteStream, inCall]);
 
   useEffect(() => {
+    // Quando entramos na sala, o servidor vai enviar o histórico
     socket.emit("join_room", room);
   }, [room]);
 
@@ -40,7 +41,11 @@ function App() {
         message: currentMessage,
         time: new Date(Date.now()).getHours() + ":" + new Date(Date.now()).getMinutes().toString().padStart(2, '0'),
       };
+      
+      // Enviar para o servidor (que vai guardar na BD)
       await socket.emit("send_message", messageData);
+      
+      // Adicionar à nossa lista localmente para ver logo
       setMessageList((list) => [...list, messageData]);
       setCurrentMessage("");
     }
@@ -48,17 +53,14 @@ function App() {
 
   // --- LÓGICA DE ENCERRAR CHAMADA ---
   const endCall = () => {
-    // 1. Parar hardware (luz da câmara)
     if (myVideoRef.current && myVideoRef.current.srcObject) {
       myVideoRef.current.srcObject.getTracks().forEach((track) => track.stop());
       myVideoRef.current.srcObject = null;
     }
-    // 2. Fechar conexão
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
-    // 3. Reset visual
     setInCall(false);
     setRemoteStream(null);
     setIsRoomCreator(false);
@@ -66,17 +68,26 @@ function App() {
 
   const hangUp = () => {
     endCall(); 
-    socket.emit('end_call', room); // Avisa o outro
+    socket.emit('end_call', room);
   };
 
+  // --- OUVINTES DO SOCKET (AQUI ESTÁ A CORREÇÃO) ---
   useEffect(() => {
-    socket.on("receive_message", (data) => setMessageList((list) => [...list, data]));
+    // 1. Receber Mensagem Nova em Tempo Real
+    socket.on("receive_message", (data) => {
+      setMessageList((list) => [...list, data]);
+    });
     
-    // Se alguém desligar a chamada
-    socket.on('call_ended', () => {
-      endCall();
+    // 2. 🔥 RECEBER HISTÓRICO DA BASE DE DADOS 🔥
+    // Isto substitui a lista vazia pelas mensagens antigas que vieram do MongoDB
+    socket.on('load_history', (history) => {
+      console.log("Histórico recebido:", history); // Para vermos na consola se funcionou
+      setMessageList(history);
     });
 
+    socket.on('call_ended', () => { endCall(); });
+
+    // WebRTC
     socket.on('offer', async (payload) => {
       if (!peerConnectionRef.current) createPeerConnection();
       const pc = peerConnectionRef.current;
@@ -97,32 +108,28 @@ function App() {
       if (pc) await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
     });
 
+    // Limpeza ao desmontar
     return () => {
       socket.off("receive_message");
+      socket.off('load_history'); // Importante limpar este listener
       socket.off('call_ended');
       socket.off('offer');
       socket.off('answer');
       socket.off('ice-candidate');
     };
-  }, [room]);
+  }, [room]); // Executa sempre que mudamos de sala
 
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection(rtcConfig);
-    
     pc.onicecandidate = (event) => {
       if (event.candidate) socket.emit('ice-candidate', { candidate: event.candidate, room });
     };
-
-    pc.ontrack = (event) => {
-      setRemoteStream(event.streams[0]);
-    };
-
+    pc.ontrack = (event) => { setRemoteStream(event.streams[0]); };
     if (myVideoRef.current && myVideoRef.current.srcObject) {
       myVideoRef.current.srcObject.getTracks().forEach(track => {
         pc.addTrack(track, myVideoRef.current.srcObject);
       });
     }
-
     peerConnectionRef.current = pc;
     return pc;
   };
@@ -132,7 +139,6 @@ function App() {
     setIsRoomCreator(true);
     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     if (myVideoRef.current) myVideoRef.current.srcObject = stream;
-
     setTimeout(async () => {
       const pc = createPeerConnection();
       const offer = await pc.createOffer();
@@ -144,11 +150,9 @@ function App() {
   const joinCall = async () => {
      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
      if (myVideoRef.current) myVideoRef.current.srcObject = stream;
-     
      stream.getTracks().forEach(track => {
         if (peerConnectionRef.current) peerConnectionRef.current.addTrack(track, stream);
      });
-
      const pc = peerConnectionRef.current;
      const offer = await pc.createOffer();
      await pc.setLocalDescription(offer);
@@ -159,7 +163,6 @@ function App() {
     <div className="app-container">
       <div className="sidebar">
         <h2><Monitor size={24} color="#2563EB" /> CoLab.</h2>
-        
         <div className={room === "Geral" ? "channel active" : "channel"} onClick={() => setRoom("Geral")}>
           <Hash size={18} /> Geral
         </div>
@@ -175,7 +178,6 @@ function App() {
         <div className="chat-header">
           <div className="header-title"><Hash size={20} color="#2563EB" /> {room}</div>
           
-          {/* LÓGICA DO BOTÃO SAIR */}
           {!inCall ? (
             <button onClick={startCall} className="btn-primary">
               <Video size={18} /> Iniciar Vídeo
@@ -187,7 +189,6 @@ function App() {
                     <Video size={18} /> Ligar Minha Câmara
                   </button>
                )}
-               {/* BOTÃO VERMELHO DE SAIR */}
                <button onClick={hangUp} style={{backgroundColor: '#EF4444', color:'white', padding:'8px 15px', borderRadius:'8px', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:'8px', fontWeight:'600'}}>
                  <PhoneOff size={18} /> Sair
                </button>
@@ -209,9 +210,12 @@ function App() {
           </div>
         )}
 
+        {/* --- LISTA DE MENSAGENS --- */}
         <div className="chat-body">
           {messageList
-            .filter((msg) => msg.room === room)
+            // O filtro aqui é importante, mas o load_history já traz só as da sala certa
+            // Mantemos o filtro por segurança para mensagens em tempo real
+            .filter((msg) => msg.room === room) 
             .map((msg, index) => (
             <div className="message-container" id={username === msg.author ? "you" : "other"} key={index}>
               <div className="message-content">
