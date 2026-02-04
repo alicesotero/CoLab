@@ -387,3 +387,127 @@ video {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* --- EXTRAS DO CHAT (EMOJIS E FICHEIROS) --- */
+
+/* Input Wrapper agora acomoda ícones dentro */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 25px;
+  padding-right: 15px; /* Espaço para os ícones */
+  transition: all 0.2s;
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--colab-blue);
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-wrapper input {
+  border: none !important; /* Removemos a borda do input original */
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-right: 10px;
+}
+
+.chat-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6B7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 50%;
+  transition: color 0.2s, background 0.2s;
+}
+
+.action-btn:hover {
+  color: var(--colab-blue);
+  background-color: #EFF6FF;
+}
+
+/* Picker de Emojis Flutuante */
+.emoji-picker-container {
+  position: absolute;
+  bottom: 60px;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  border-radius: 12px;
+}
+
+/* Pré-visualização de ficheiro antes de enviar */
+.file-preview {
+  position: absolute;
+  bottom: 80px;
+  left: 25px;
+  background: white;
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #E5E7EB;
+  z-index: 90;
+}
+
+.file-preview img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.file-preview span {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Ficheiro na mensagem */
+.msg-file-attachment {
+  margin-top: 10px;
+}
+
+.msg-file-attachment img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  cursor: pointer;
+}
+
+.msg-file-download {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F3F4F6;
+  padding: 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.msg-file-download:hover {
+  background: #E5E7EB;
+}

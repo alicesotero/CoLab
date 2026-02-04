@@ -5,7 +5,12 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 const app = express();
+
+// Aumentar o limite para aceitar ficheiros grandes (até 50MB)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
+
 
 const MONGO_URL = "mongodb+srv://CoLabAdmin:Z820v6ezLrGAmcoP@colabadmin.qwlqrwq.mongodb.net/test?retryWrites=true&w=majority&appName=CoLabAdmin";
 
@@ -13,9 +18,19 @@ mongoose.connect(MONGO_URL)
   .then(() => console.log('✅ MONGODB CONECTADO'))
   .catch((err) => console.error('❌ ERRO MONGODB:', err));
 
-// --- MODELOS ---
+
 const messageSchema = new mongoose.Schema({
-  room: String, author: String, message: String, time: String, createdAt: { type: Date, default: Date.now }
+  room: String,
+  author: String,
+  message: String,
+  time: String,
+  // O campo file TEM de ser um objeto, não pode ser String
+  file: {
+    name: { type: String },
+    type: { type: String },
+    content: { type: String } // Base64
+  },
+  createdAt: { type: Date, default: Date.now }
 });
 const Message = mongoose.model('Message', messageSchema);
 
@@ -32,7 +47,10 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*", methods: ["GET", "POST"] } });
+const io = new Server(server, { 
+  cors: { origin: "*", methods: ["GET", "POST"] },
+  maxHttpBufferSize: 1e8 // Aumentar limite do Socket (100 MB)
+});
 
 io.on('connection', (socket) => {
   // --- AUTENTICAÇÃO ---
@@ -72,8 +90,7 @@ io.on('connection', (socket) => {
     } catch (err) { socket.emit('auth_error', 'Erro no servidor.'); }
   });
 
-  // --- 🔥 ADMINISTRAÇÃO 🔥 ---
-  
+  // --- ADMINISTRAÇÃO ---
   socket.on('get_all_users', async () => {
     const users = await User.find({}, 'username firstName lastName allowedRooms pendingRequests');
     socket.emit('all_users_data', users);
@@ -109,26 +126,17 @@ io.on('connection', (socket) => {
     } catch(err) { console.error(err); }
   });
 
-  // 🔥 NOVO: ADMIN ELIMINA UTILIZADOR 🔥
   socket.on('admin_delete_user', async (targetUsername) => {
     try {
-      // 1. Apaga da Base de Dados
       await User.findOneAndDelete({ username: targetUsername });
-      
-      // 2. Envia lista atualizada para o Admin
       const users = await User.find({}, 'username firstName lastName allowedRooms pendingRequests');
       socket.emit('all_users_data', users);
-
-      // 3. Avisa o Admin que correu bem
       socket.emit('admin_action_success', `O utilizador ${targetUsername} foi eliminado.`);
-
-      // (Opcional) Forçar logout desse user se estiver online
       io.emit('force_logout_user', targetUsername);
-
     } catch (err) { console.error(err); }
   });
 
-  // --- RESTO (IGUAL) ---
+  // --- UPDATE PHONE & DELETE ACCOUNT ---
   socket.on('update_phone', async (data) => {
       const { username, phoneNumber } = data;
       await User.findOneAndUpdate({ username }, { phoneNumber });
@@ -140,16 +148,25 @@ io.on('connection', (socket) => {
       socket.emit('account_deleted_success');
   });
 
+  // --- CHAT (AGORA SUPORTA FICHEIROS) ---
   socket.on('join_room', async (room) => {
     socket.join(room);
     try {
+      // Limite 50 mensagens para não pesar
       const history = await Message.find({ room: room }).sort({ createdAt: 1 }).limit(50);
       socket.emit('load_history', history);
     } catch (err) { console.error(err); }
   });
 
   socket.on('send_message', async (data) => {
-    const newMessage = new Message(data); await newMessage.save(); socket.to(data.room).emit('receive_message', data);
+    console.log("Recebida mensagem com ficheiro?", !!data.file); // Log para debug
+    try {
+      const newMessage = new Message(data); 
+      await newMessage.save(); 
+      socket.to(data.room).emit('receive_message', data);
+    } catch (error) {
+      console.error("ERRO AO GUARDAR MENSAGEM:", error);
+    }
   });
 
   // WebRTC
