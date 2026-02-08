@@ -41,13 +41,13 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   phoneNumber: { type: String },
   isAdmin: { type: Boolean, default: false },
-  allowedRooms: { type: [String], default: ['Geral'] }, 
-  pendingRequests: { type: [String], default: [] }      
+  allowedRooms: { type: [String], default: ['Geral'] },
+  pendingRequests: { type: [String], default: [] }
 });
 const User = mongoose.model('User', userSchema);
 
 const server = http.createServer(app);
-const io = new Server(server, { 
+const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
   maxHttpBufferSize: 1e8 // Aumentar limite do Socket (100 MB)
 });
@@ -65,10 +65,10 @@ io.on('connection', (socket) => {
 
       const newUser = new User({ username, password, firstName, lastName, phoneNumber, isAdmin, allowedRooms });
       await newUser.save();
-      
-      socket.emit('auth_success', { 
+
+      socket.emit('auth_success', {
         username, firstName, lastName, phoneNumber, isAdmin, allowedRooms, pendingRequests: [],
-        message: 'Conta criada!' 
+        message: 'Conta criada!'
       });
     } catch (err) { socket.emit('auth_error', 'Erro ao criar conta.'); }
   });
@@ -79,13 +79,13 @@ io.on('connection', (socket) => {
       const user = await User.findOne({ username });
       if (!user || user.password !== password) { socket.emit('auth_error', 'Dados incorretos.'); return; }
 
-      socket.emit('auth_success', { 
-        username, firstName: user.firstName, lastName: user.lastName, 
-        phoneNumber: user.phoneNumber || "", 
+      socket.emit('auth_success', {
+        username, firstName: user.firstName, lastName: user.lastName,
+        phoneNumber: user.phoneNumber || "",
         isAdmin: user.isAdmin,
         allowedRooms: user.allowedRooms,
         pendingRequests: user.pendingRequests,
-        message: 'Bem-vindo!' 
+        message: 'Bem-vindo!'
       });
     } catch (err) { socket.emit('auth_error', 'Erro no servidor.'); }
   });
@@ -97,15 +97,15 @@ io.on('connection', (socket) => {
   });
 
   socket.on('toggle_permission', async (data) => {
-    const { targetUsername, room, action } = data; 
+    const { targetUsername, room, action } = data;
     try {
       const user = await User.findOne({ username: targetUsername });
       if (user) {
         if (action === 'grant') {
-           if (!user.allowedRooms.includes(room)) user.allowedRooms.push(room);
-           user.pendingRequests = user.pendingRequests.filter(r => r !== room);
+          if (!user.allowedRooms.includes(room)) user.allowedRooms.push(room);
+          user.pendingRequests = user.pendingRequests.filter(r => r !== room);
         } else {
-           user.allowedRooms = user.allowedRooms.filter(r => r !== room);
+          user.allowedRooms = user.allowedRooms.filter(r => r !== room);
         }
         await user.save();
         const users = await User.find({}, 'username firstName lastName allowedRooms pendingRequests');
@@ -123,7 +123,7 @@ io.on('connection', (socket) => {
         user.pendingRequests.push(room);
         await user.save();
       }
-    } catch(err) { console.error(err); }
+    } catch (err) { console.error(err); }
   });
 
   socket.on('admin_delete_user', async (targetUsername) => {
@@ -138,14 +138,14 @@ io.on('connection', (socket) => {
 
   // --- UPDATE PHONE & DELETE ACCOUNT ---
   socket.on('update_phone', async (data) => {
-      const { username, phoneNumber } = data;
-      await User.findOneAndUpdate({ username }, { phoneNumber });
-      socket.emit('phone_updated_success', 'Telemóvel atualizado!');
+    const { username, phoneNumber } = data;
+    await User.findOneAndUpdate({ username }, { phoneNumber });
+    socket.emit('phone_updated_success', 'Telemóvel atualizado!');
   });
-  
+
   socket.on('delete_account', async (username) => {
-      await User.findOneAndDelete({ username });
-      socket.emit('account_deleted_success');
+    await User.findOneAndDelete({ username });
+    socket.emit('account_deleted_success');
   });
 
   // --- CHAT (AGORA SUPORTA FICHEIROS) ---
@@ -161,8 +161,8 @@ io.on('connection', (socket) => {
   socket.on('send_message', async (data) => {
     console.log("Recebida mensagem com ficheiro?", !!data.file); // Log para debug
     try {
-      const newMessage = new Message(data); 
-      await newMessage.save(); 
+      const newMessage = new Message(data);
+      await newMessage.save();
       socket.to(data.room).emit('receive_message', data);
     } catch (error) {
       console.error("ERRO AO GUARDAR MENSAGEM:", error);
@@ -174,6 +174,7 @@ io.on('connection', (socket) => {
   socket.on('answer', (p) => socket.to(p.room).emit('answer', p));
   socket.on('ice-candidate', (p) => socket.to(p.room).emit('ice-candidate', p));
   socket.on('end_call', (r) => socket.to(r).emit('call_ended'));
+  socket.on('media_status', (data) => socket.to(data.room).emit('media_status', data));
 });
 
 server.listen(3001, () => console.log('🚀 SERVIDOR ADMIN PRONTO'));

@@ -115,13 +115,15 @@ body {
   flex-direction: column;
   gap: 15px;
   background-image: radial-gradient(#E5E7EB 1px, transparent 1px);
-  background-size: 20px 20px; /* Padrão de pontinhos subtil */
+  background-size: 20px 20px;
+  /* Padrão de pontinhos subtil */
 }
 
 /* Scrollbar bonita */
 .chat-body::-webkit-scrollbar {
   width: 6px;
 }
+
 .chat-body::-webkit-scrollbar-thumb {
   background-color: #D1D5DB;
   border-radius: 10px;
@@ -149,7 +151,7 @@ body {
   font-size: 15px;
   line-height: 1.5;
   position: relative;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 #you .message-content {
@@ -239,7 +241,9 @@ body {
   transition: background 0.2s;
 }
 
-.btn-primary:hover { background-color: var(--colab-blue-dark); }
+.btn-primary:hover {
+  background-color: var(--colab-blue-dark);
+}
 
 .btn-success {
   background-color: #10B981;
@@ -273,21 +277,22 @@ body {
   border-radius: 12px;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 video {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scaleX(-1); /* Efeito espelho */
+  transform: scaleX(-1);
+  /* Efeito espelho */
 }
 
 .user-label {
   position: absolute;
   bottom: 10px;
   left: 10px;
-  background-color: rgba(0,0,0,0.6);
+  background-color: rgba(0, 0, 0, 0.6);
   color: white;
   padding: 4px 10px;
   border-radius: 4px;
@@ -295,6 +300,109 @@ video {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+.header-controls {
+  display: flex;
+  gap: 8px;
+  margin-right: 10px;
+  border-right: 1px solid #E5E7EB;
+  padding-right: 15px;
+}
+
+.control-btn {
+  background-color: #F3F4F6;
+  color: #6B7280;
+  border: 1px solid #E5E7EB;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-btn:hover {
+  background-color: #E5E7EB;
+  color: var(--colab-blue);
+  transform: scale(1.05);
+}
+
+.control-btn.off {
+  background-color: #FEE2E2;
+  color: #EF4444;
+  border-color: #FECACA;
+}
+
+.control-btn.off:hover {
+  background-color: #FCA5A5;
+  color: white;
+}
+
+.video-controls {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.video-btn {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.video-btn:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+  transform: scale(1.1);
+}
+
+.video-btn.off {
+  background-color: #EF4444;
+  color: white;
+}
+
+.video-btn.off:hover {
+  background-color: #DC2626;
+}
+
+.status-overlay {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 255, 255, 0.9);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 5;
+}
+
+.video-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 60px;
+  font-weight: bold;
 }
 
 /* --- LOGIN / REGISTO (ATUALIZADO & COMPACTO) --- */
@@ -309,16 +417,17 @@ video {
 
 .login-card {
   background: white;
-  padding: 30px; /* Mais compacto */
+  padding: 30px;
+  /* Mais compacto */
   border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   text-align: center;
   width: 100%;
   max-width: 400px;
   animation: fadeIn 0.5s ease;
-  
+
   /* ESTA É A PARTE MÁGICA PARA ECRÃS PEQUENOS */
-  max-height: 90vh; 
+  max-height: 90vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -328,6 +437,7 @@ video {
 .login-card::-webkit-scrollbar {
   width: 4px;
 }
+
 .login-card::-webkit-scrollbar-thumb {
   background-color: #E2E8F0;
   border-radius: 10px;
@@ -380,12 +490,21 @@ video {
   margin-top: 10px;
 }
 
-.btn-login:hover { background-color: var(--colab-blue-dark); }
+.btn-login:hover {
+  background-color: var(--colab-blue-dark);
+}
 
 /* Animação suave */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- EXTRAS DO CHAT (EMOJIS E FICHEIROS) --- */
@@ -398,7 +517,8 @@ video {
   background-color: #F9FAFB;
   border: 1px solid #E5E7EB;
   border-radius: 25px;
-  padding-right: 15px; /* Espaço para os ícones */
+  padding-right: 15px;
+  /* Espaço para os ícones */
   transition: all 0.2s;
 }
 
@@ -409,7 +529,8 @@ video {
 }
 
 .input-wrapper input {
-  border: none !important; /* Removemos a borda do input original */
+  border: none !important;
+  /* Removemos a borda do input original */
   background: transparent !important;
   box-shadow: none !important;
   padding-right: 10px;
@@ -445,7 +566,7 @@ video {
   bottom: 60px;
   right: 0;
   z-index: 100;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   border-radius: 12px;
 }
 
@@ -457,7 +578,7 @@ video {
   background: white;
   padding: 10px;
   border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -508,6 +629,7 @@ video {
   font-weight: 600;
   transition: background 0.2s;
 }
+
 .msg-file-download:hover {
   background: #E5E7EB;
 }
